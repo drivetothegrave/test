@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Список</title>
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      background: #fff;
+      padding: 30px 0 60px 0;
+    }
+
+    /* Контейнер списка */
+    .doc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 24px; /* Отступ между карточками */
+      position: relative;
+      width: 680px;
+      padding: 0 20px;
+      margin: 0 auto;
+    }
+
+    /* Карточка */
+    .doc-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      overflow: visible;
+      z-index: 0;
+    }
+
+    .doc-item:hover {
+      z-index: 2;
+    }
+
+    /* Иконка */
+    .doc-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #bcd3e6;
+      flex-shrink: 0;
+    }
+
+    /* Текст */
+    .doc-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .doc-title {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .doc-subtitle {
+      font-weight: 400;
+      color: #777;
+      font-size: 14px;
+    }
+
+    /* Ховер подложка */
+    .doc-item::before {
+      content: "";
+      position: absolute;
+      top: -15px;
+      left: -20px;
+      right: -20px;
+      bottom: -15px;
+      background: #F3F3F3;
+      border-radius: 10px;
+      z-index: -1;
+      opacity: 0;
+      transition: all 0.25s ease;
+    }
+
+    .doc-item:hover::before {
+      top: -15px;
+      left: -20px;
+      right: -20px;
+      bottom: -15px;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="doc-list">
+    <div class="doc-item">
+      <div class="doc-icon"></div>
+      <div class="doc-text">
+        <div class="doc-title">Об оборотах с разбивкой по месяцам</div>
+        <div class="doc-subtitle">Доставка курьером</div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-icon"></div>
+      <div class="doc-text">
+        <div class="doc-title">Платёжное поручение и ещё 5 документов</div>
+        <div class="doc-subtitle">Доставка курьером</div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-icon"></div>
+      <div class="doc-text">
+        <div class="doc-title">Платёжное поручение и ещё 2 документа</div>
+        <div class="doc-subtitle">Доставка курьером</div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-icon"></div>
+      <div class="doc-text">
+        <div class="doc-title">Платёжное поручение и ещё 1 документ</div>
+        <div class="doc-subtitle">Доставка на электронную почту</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
