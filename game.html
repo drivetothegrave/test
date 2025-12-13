@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Business Reigns — Demo</title>
+<style>
+body {
+  margin: 0;
+  background: #0f0f0f;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.app {
+  width: 360px;
+  height: 720px;
+  background: #151515;
+  border-radius: 20px;
+  padding: 14px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #fff;
+}
+.header { text-align: center; color: #ccc; font-size: 14px; }
+.stats { display: flex; flex-direction: column; gap: 6px; }
+.stat { font-size: 12px; color: #ccc; }
+.stat-label { display: flex; justify-content: space-between; }
+.bar { height: 6px; background: #333; border-radius: 4px; overflow: hidden; position: relative; }
+.fill { height: 100%; background: #aaa; }
+.preview { position: absolute; top: 0; height: 100%; opacity: 0.7; }
+.plus { background: #27ae60; }
+.minus { background: #c0392b; }
+
+/* ===== CARD ===== */
+.card {
+  background: #fff;
+  color: #111;
+  border-radius: 16px;
+  height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 22px;
+  text-align: center;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  user-select: none;
+  cursor: grab;
+  transition: transform 0.2s;
+}
+
+/* ===== CHOICES ===== */
+.choices { display: flex; gap: 12px; margin-top: 12px; }
+.choice {
+  flex: 1;
+  background: #fff;
+  color: #111;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.choice.left:hover { transform: rotate(-10deg) translateX(-5px); }
+.choice.right:hover { transform: rotate(10deg) translateX(5px); }
+
+/* ===== GAME OVER ===== */
+.gameover {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+}
+.gameover button {
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+.share { background: #3498db; color: white; }
+.retry { background: #2ecc71; color: white; }
+
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+// ===== CLASSES =====
+const classes = {
+    startup: { title:"🚀 Стартап", desc:"Много идей, мало денег и хаос", stats:{cash:40,people:70,image:30,chaos:60} },
+    seller: { title:"🛒 Селлер", desc:"Зависимость от платформ", stats:{cash:60,people:30,image:40,chaos:50} },
+    restaurant: { title:"🍽 Ресторан", desc:"Люди, проверки и репутация", stats:{cash:50,people:60,image:50,chaos:40} }
+};
+let stats, days=1, currentCard, resultText="";
+
+// ===== CARDS с положительным и отрицательным эффектом =====
+const cards = [
+{ text:"Дать сотрудникам бонус", left:{ e:{cash:-10,people:+5}, r:"Сэкономили, но сотрудники недовольны." }, right:{ e:{cash:-20,people:+10,image:+5}, r:"Сотрудники довольны, но деньги потрачены." }},
+{ text:"Клиент жалуется публично. Ответить лично?", left:{ e:{image:-10,chaos:+5}, r:"Жалоба осталась без ответа." }, right:{ e:{image:+10,chaos:+5,cash:-5}, r:"Сгладили конфликт, немного потеряли деньги." }},
+{ text:"Команда устала. Дадим выходной?", left:{ e:{cash:+5,people:-10}, r:"Сэкономили деньги, но команда выгорела." }, right:{ e:{cash:-10,people:+15}, r:"Команда отдохнула, но деньги ушли." }},
+{ text:"Можно ускориться в обход процессов. Рискнём?", left:{ e:{chaos:-5,people:-5}, r:"Сохранили порядок, но потеряли темп." }, right:{ e:{cash:+10,chaos:+15}, r:"Быстрее, но бардак вырос." }}
+];
+
+// ===== RENDER =====
+const app = document.getElementById("app");
+
+function renderClassSelect(){
+    app.innerHTML = `
+        <div>
+            <div style="text-align:center;font-size:18px;margin-bottom:8px;">Выберите бизнес</div>
+            ${Object.keys(classes).map(k=>`
+                <div style="background:#fff;color:#111;padding:16px;margin-bottom:12px;border-radius:16px;cursor:pointer;" onclick="startGame('${k}')">
+                    <strong>${classes[k].title}</strong><br>${classes[k].desc}
+                </div>`).join('')}
+        </div>`;
+}
+
+function renderGame(){
+    app.innerHTML = `
+        <div class="header">День ${days}</div>
+        <div class="stats">
+            ${stat("💰 Деньги","cash")}
+            ${stat("👥 Команда","people")}
+            ${stat("📈 Репутация","image")}
+            ${stat("⚙️ Процессы","chaos")}
+        </div>
+        <div class="card" id="card">${currentCard.text}</div>
+        <div class="result">${resultText}</div>
+        <div class="choices">
+            <div class="choice left" onmouseenter="preview('left')" onmouseleave="clearPreview()" onclick="choose('left')">НЕТ</div>
+            <div class="choice right" onmouseenter="preview('right')" onmouseleave="clearPreview()" onclick="choose('right')">ДА</div>
+        </div>
+    `;
+    enableDrag();
+}
+
+function stat(label,key){
+    return `<div class="stat">
+        <div class="stat-label"><span>${label}</span><span>${stats[key]}%</span></div>
+        <div class="bar" id="bar-${key}"><div class="fill" style="width:${stats[key]}%"></div></div>
+    </div>`;
+}
+
+// ===== GAME LOGIC =====
+function startGame(cls){
+    stats={...classes[cls].stats};
+    days=1;
+    nextCard();
+}
+
+function nextCard(){
+    currentCard=cards[Math.floor(Math.random()*cards.length)];
+    resultText="";
+    renderGame();
+}
+
+function choose(side){
+    const eff=currentCard[side].e;
+    for(let k in eff) stats[k]=Math.max(0,Math.min(100,stats[k]+eff[k]));
+    resultText=currentCard[side].r;
+    days++;
+    setTimeout(()=>{
+        if(Object.values(stats).some(v=>v<=0)) gameOver();
+        else nextCard();
+    },600);
+}
+
+function preview(side){
+    clearPreview();
+    const eff=currentCard[side].e;
+    for(let k in eff){
+        const bar=document.getElementById("bar-"+k);
+        const p=document.createElement("div");
+        p.className="preview "+(eff[k]>0?"plus":"minus");
+        p.style.width=Math.abs(eff[k])+"%";
+        bar.appendChild(p);
+    }
+}
+function clearPreview(){ document.querySelectorAll(".preview").forEach(p=>p.remove()); }
+
+// ===== DRAG EFFECT =====
+function enableDrag(){
+    const card=document.getElementById("card");
+    let offsetX=0, dragging=false;
+    card.onmousedown=(e)=>{ dragging=true; offsetX=e.clientX; };
+    document.onmouseup=()=>{ if(dragging){ card.style.transform="rotate(0)"; dragging=false; } };
+    document.onmousemove=(e)=>{
+        if(!dragging) return;
+        const dx=e.clientX-offsetX;
+        card.style.transform=`translateX(${dx}px) rotate(${dx/10}deg)`;
+    };
+}
+
+// ===== GAME OVER =====
+function gameOver(){
+    app.innerHTML=`<div class="gameover">
+        <h1>Бизнес закрылся</h1>
+        <p>Вы продержались <b>${days}</b> дней</p>
+        <button class="share" onclick="share()">Поделиться</button>
+        <button class="retry" onclick="location.reload()">Начать заново</button>
+    </div>`;
+}
+
+function share(){
+    const text=`Я продержался ${days} дней в Business Reigns. А ты?`;
+    if(navigator.share) navigator.share({ text });
+    else alert(text);
+}
+
+// START
+renderClassSelect();
+</script>
+</body>
+</html>
